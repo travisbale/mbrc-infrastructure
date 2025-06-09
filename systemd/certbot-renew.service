@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew TLS certificates using Certbot in Docker
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/mbrc-infrastructure/systemd
+ExecStart=/usr/bin/env bash -c './renew-certs.sh'

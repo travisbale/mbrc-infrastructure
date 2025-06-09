@@ -1,0 +1,68 @@
+services:
+  nginx:
+    image: nginx:stable-alpine
+    restart: always
+    container_name: nginx
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - certbot
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - /usr/share/nginx/html:/usr/share/nginx/html:ro
+      - certificates:/etc/letsencrypt:ro
+
+  certbot:
+    image: certbot/dns-route53
+    container_name: certbot
+    command: >
+      certonly
+      --dns-route53
+      --non-interactive
+      --agree-tos
+      --email ${CERTBOT_EMAIL}
+      -d ${CERTBOT_ROOT_DOMAIN}
+      -d ${CERTBOT_WILDCARD_DOMAIN}
+    environment:
+      - AWS_REGION=us-east-1
+    volumes:
+      - certificates:/etc/letsencrypt
+
+  postgres:
+    image: postgres:13-alpine
+    restart: always
+    container_name: postgres
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    env_file: ./env/postgres.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgressql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    mem_limit: 128m
+    restart: unless-stopped
+    container_name: pgadmin
+    env_file: ./env/pgadmin.env
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  certificates:
+  postgres_data:
+  pgadmin_data:
