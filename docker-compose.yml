@@ -33,6 +33,32 @@ services:
     volumes:
       - certificates:/etc/letsencrypt
 
+  heimdall:
+    image: travisbale/heimdall:latest
+    container_name: heimdall
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on: 
+      - postgres
+    env_file: ./env/heimdall.env
+    volumes:
+      - ./keys:/app/keys
+
+  scorecard:
+    image: travisbale/scorecard:latest
+    container_name: scorecard
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on: 
+      - postgres
+    env_file: ./env/scorecard.env
+    volumes:
+      - ./keys:/app/keys
+
   postgres:
     image: postgres:13-alpine
     restart: always
