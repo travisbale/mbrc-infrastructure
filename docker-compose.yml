@@ -16,6 +16,7 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - /usr/share/nginx/html:/usr/share/nginx/html:ro
       - certificates:/etc/letsencrypt:ro
+      - player_photos:/uploads/player-photos:ro
 
   certbot:
     image: certbot/dns-route53
@@ -58,6 +59,7 @@ services:
     env_file: ./env/scorecard.env
     volumes:
       - ./keys:/app/keys
+      - player_photos:/uploads/player-photos
 
   postgres:
     image: postgres:13-alpine
@@ -92,3 +94,4 @@ volumes:
   certificates:
   postgres_data:
   pgadmin_data:
+  player_photos:
