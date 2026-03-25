@@ -36,6 +36,7 @@ services:
 
   heimdall:
     image: travisbale/heimdall:latest
+    restart: always
     container_name: heimdall
     logging:
       options:
@@ -49,6 +50,7 @@ services:
 
   scorecard:
     image: travisbale/scorecard:latest
+    restart: always
     container_name: scorecard
     logging:
       options:
