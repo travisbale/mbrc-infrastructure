@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# Run scorecard database migrations as a one-off Cloud Run Job (`scorecard migrate up`).
+# Deploy-time step: run this after bootstrap-secrets.sh and before/with deploy.sh.
+# The job reuses the same container image and the same DATABASE_URL secret as the service.
+#
+#   GCP_PROJECT=my-proj ./migrate.sh
+#
+set -euo pipefail
+
+PROJECT="${GCP_PROJECT:?set GCP_PROJECT}"
+REGION="${GCP_REGION:-us-central1}"
+JOB="${JOB:-scorecard-migrate}"
+SOURCE_DIR="${SCORECARD_SRC:-../../../scorecard}"
+DB_URL_SECRET="${DB_URL_SECRET:-scorecard-database-url}"
+
+# `--args migrate,up` overrides the image's default `start` command. migrate needs only
+# the database URL (not the JWT key), so nothing else is wired in.
+gcloud run jobs deploy "$JOB" \
+  --project "$PROJECT" \
+  --region "$REGION" \
+  --source "$SOURCE_DIR" \
+  --args "migrate,up" \
+  --max-retries 1 \
+  --task-timeout 300s \
+  --set-secrets "DATABASE_URL=${DB_URL_SECRET}:latest"
+
+echo "Executing migrations…"
+gcloud run jobs execute "$JOB" --project "$PROJECT" --region "$REGION" --wait
+echo "Migrations applied."

@@ -1,0 +1,25 @@
+# Cloudflare Worker: same-origin API proxy for manitobarydercup.com.
+# Bound to `/api/*` on the same hostname the Pages site serves, so the SPA's relative
+# API calls reach the Cloud Run services without CORS. Deploy with `wrangler deploy`.
+
+name = "mbrc-api-proxy"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+# These routes run the Worker *in front of* Pages for matching paths; every other path
+# falls through to the Pages site. The zone must exist in this Cloudflare account and the
+# Pages project must have manitobarydercup.com as a custom domain.
+routes = [
+  { pattern = "manitobarydercup.com/api/*", zone_name = "manitobarydercup.com" },
+  { pattern = "www.manitobarydercup.com/api/*", zone_name = "manitobarydercup.com" },
+]
+
+# Non-secret upstream URLs — fill these in after the Cloud Run services are deployed
+# (`gcloud run services describe <svc> --format='value(status.url)'`).
+[vars]
+HEIMDALL_URL = "https://REPLACE-heimdall-xxxxx-uc.a.run.app"
+SCORECARD_URL = "https://REPLACE-scorecard-xxxxx-uc.a.run.app"
+
+# PROXY_SECRET is a secret, not a var. Set it once with:
+#   wrangler secret put PROXY_SECRET
+# (and add the matching check to the services when you harden ingress).
