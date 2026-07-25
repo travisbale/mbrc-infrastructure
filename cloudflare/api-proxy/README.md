@@ -34,5 +34,8 @@ npm run deploy
   `src/index.ts` into the web repo as a Pages Function at `functions/api/[[path]].ts`
   (same logic, guaranteed to run on the Pages domain). Keeping it here as a Worker keeps
   all deploy code in the infrastructure repo, which is why it's the default.
-- `PROXY_SECRET` is forwarded as `X-Proxy-Secret` but **not yet enforced** by the
-  services. See the top-level README "Harden ingress" step.
+- `PROXY_SECRET` is forwarded as `X-Proxy-Secret` and **enforced** by both services
+  (knowhere's `RequireProxySecret` middleware): a request missing or mismatching it gets a
+  403, except the health check. Set the **same** value here and in Secret Manager
+  (`proxy-secret`) — a mismatch 403s all API traffic. Deploy the services with the secret
+  set at the same time you set it on the Worker.

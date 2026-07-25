@@ -23,6 +23,7 @@ DB_URL_SECRET="${DB_URL_SECRET:-heimdall-database-url}"
 ENC_SECRET="${ENC_SECRET:-heimdall-encryption-key}"
 JWT_PRIVATE_SECRET="${JWT_PRIVATE_SECRET:-jwt-private-key}"
 JWT_PUBLIC_SECRET="${JWT_PUBLIC_SECRET:-jwt-public-key}"
+PROXY_SECRET_NAME="${PROXY_SECRET_NAME:-proxy-secret}"
 
 # `^@^` makes @ the delimiter between vars, so CORS_ALLOWED_ORIGINS can contain commas.
 gcloud run deploy "$SERVICE" \
@@ -38,7 +39,7 @@ gcloud run deploy "$SERVICE" \
   --max-instances 3 \
   --allow-unauthenticated \
   --set-env-vars "^@^ENVIRONMENT=production@LOG_FORMAT=json@HTTP_ADDRESS=:8080@PUBLIC_URL=${PUBLIC_URL}@TRUSTED_PROXY_MODE=true@CORS_ALLOWED_ORIGINS=${CORS_ORIGINS}@JWT_PRIVATE_KEY_PATH=/secrets/jwt/private.pem@JWT_PUBLIC_KEY_PATH=/secrets/jwt/public.pem" \
-  --set-secrets "DATABASE_URL=${DB_URL_SECRET}:latest,ENCRYPTION_KEY=${ENC_SECRET}:latest,/secrets/jwt/private.pem=${JWT_PRIVATE_SECRET}:latest,/secrets/jwt/public.pem=${JWT_PUBLIC_SECRET}:latest"
+  --set-secrets "DATABASE_URL=${DB_URL_SECRET}:latest,ENCRYPTION_KEY=${ENC_SECRET}:latest,PROXY_SECRET=${PROXY_SECRET_NAME}:latest,/secrets/jwt/private.pem=${JWT_PRIVATE_SECRET}:latest,/secrets/jwt/public.pem=${JWT_PUBLIC_SECRET}:latest"
 
 echo
 echo "Deployed. Service URL:"

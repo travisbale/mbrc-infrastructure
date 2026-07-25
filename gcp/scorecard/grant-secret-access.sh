@@ -14,8 +14,9 @@ RUNTIME_SA="${RUNTIME_SA:-${PROJECT_NUMBER}-compute@developer.gserviceaccount.co
 
 DB_URL_SECRET="${DB_URL_SECRET:-scorecard-database-url}"
 JWT_PUBKEY_SECRET="${JWT_PUBKEY_SECRET:-jwt-public-key}"
+PROXY_SECRET_NAME="${PROXY_SECRET_NAME:-proxy-secret}"
 
-for secret in "$DB_URL_SECRET" "$JWT_PUBKEY_SECRET"; do
+for secret in "$DB_URL_SECRET" "$JWT_PUBKEY_SECRET" "$PROXY_SECRET_NAME"; do
   gcloud secrets add-iam-policy-binding "$secret" \
     --project "$PROJECT" \
     --member "serviceAccount:${RUNTIME_SA}" \

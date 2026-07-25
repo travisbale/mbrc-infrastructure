@@ -21,9 +21,11 @@ export interface Env {
   /** Cloud Run URL for scorecard, e.g. https://scorecard-abc123-uc.a.run.app */
   SCORECARD_URL: string
   /**
-   * Optional shared secret added as `X-Proxy-Secret` on every upstream request so the
-   * Cloud Run services can reject anything that didn't come through this Worker. Not yet
-   * enforced by the services — see the repo README's "Harden ingress" step.
+   * Shared secret added as `X-Proxy-Secret` on every upstream request. Both Cloud Run
+   * services enforce it (knowhere's RequireProxySecret middleware): requests missing or
+   * mismatching it get a 403, except the health check. Must equal the `proxy-secret` in
+   * Secret Manager that the services read. Leave unset only where the services also run
+   * without it (local dev).
    */
   PROXY_SECRET?: string
 }

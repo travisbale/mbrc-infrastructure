@@ -24,6 +24,7 @@ PUBLIC_TENANT_ID="${SCORECARD_PUBLIC_TENANT_ID:?set SCORECARD_PUBLIC_TENANT_ID}"
 
 DB_URL_SECRET="${DB_URL_SECRET:-scorecard-database-url}"
 JWT_PUBKEY_SECRET="${JWT_PUBKEY_SECRET:-jwt-public-key}"
+PROXY_SECRET_NAME="${PROXY_SECRET_NAME:-proxy-secret}"
 
 gcloud run deploy "$SERVICE" \
   --project "$PROJECT" \
@@ -38,7 +39,7 @@ gcloud run deploy "$SERVICE" \
   --max-instances 3 \
   --allow-unauthenticated \
   --set-env-vars "ENVIRONMENT=production,LOG_FORMAT=json,HTTP_ADDRESS=:5000,TRUSTED_PROXY_MODE=true,SCORECARD_PUBLIC_TENANT_ID=${PUBLIC_TENANT_ID},JWT_PUBLIC_KEY_PATH=/secrets/jwt/public.pem" \
-  --set-secrets "DATABASE_URL=${DB_URL_SECRET}:latest,/secrets/jwt/public.pem=${JWT_PUBKEY_SECRET}:latest"
+  --set-secrets "DATABASE_URL=${DB_URL_SECRET}:latest,PROXY_SECRET=${PROXY_SECRET_NAME}:latest,/secrets/jwt/public.pem=${JWT_PUBKEY_SECRET}:latest"
 
 echo
 echo "Deployed. Service URL:"

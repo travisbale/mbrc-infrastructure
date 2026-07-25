@@ -20,6 +20,6 @@ routes = [
 HEIMDALL_URL = "https://REPLACE-heimdall-xxxxx-uc.a.run.app"
 SCORECARD_URL = "https://REPLACE-scorecard-xxxxx-uc.a.run.app"
 
-# PROXY_SECRET is a secret, not a var. Set it once with:
-#   wrangler secret put PROXY_SECRET
-# (and add the matching check to the services when you harden ingress).
+# PROXY_SECRET is a secret, not a var. It must equal the `proxy-secret` in Secret Manager
+# that both Cloud Run services read (they enforce the X-Proxy-Secret header). Set it with:
+#   gcloud secrets versions access latest --secret=proxy-secret | wrangler secret put PROXY_SECRET

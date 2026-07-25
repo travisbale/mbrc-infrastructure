@@ -56,8 +56,10 @@ days a year.
 - **`--max-instances 3`** on each Cloud Run service bounds cost under any flood (worst
   case = 429s, not a bill). **`--min-instances 0`** keeps idle free.
 - **Cloudflare**: enable **Bot Fight Mode** and a **rate-limit rule** on `/api/*`.
-- **Harden ingress** *(todo)*: forward `X-Proxy-Secret` from the Worker and reject
-  requests without it in the services (or front Cloud Run with a GCLB — pricier).
+- **Shared-secret ingress gate** (implemented): the Worker sends `X-Proxy-Secret` and both
+  services enforce it (knowhere's `RequireProxySecret`), so a direct hit to a `run.app`
+  URL — around Cloudflare — gets a 403 before touching the DB. Create the `proxy-secret`
+  (heimdall bootstrap) and give the Worker the same value.
 - **Budget alert**: `gcloud billing budgets create` at $5/$10 as a safety net.
 ```
 gcloud billing budgets create --billing-account=<ACCT> \

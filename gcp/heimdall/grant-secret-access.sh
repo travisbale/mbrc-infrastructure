@@ -16,8 +16,9 @@ DB_URL_SECRET="${DB_URL_SECRET:-heimdall-database-url}"
 ENC_SECRET="${ENC_SECRET:-heimdall-encryption-key}"
 JWT_PRIVATE_SECRET="${JWT_PRIVATE_SECRET:-jwt-private-key}"
 JWT_PUBLIC_SECRET="${JWT_PUBLIC_SECRET:-jwt-public-key}"
+PROXY_SECRET_NAME="${PROXY_SECRET_NAME:-proxy-secret}"
 
-for secret in "$DB_URL_SECRET" "$ENC_SECRET" "$JWT_PRIVATE_SECRET" "$JWT_PUBLIC_SECRET"; do
+for secret in "$DB_URL_SECRET" "$ENC_SECRET" "$JWT_PRIVATE_SECRET" "$JWT_PUBLIC_SECRET" "$PROXY_SECRET_NAME"; do
   gcloud secrets add-iam-policy-binding "$secret" \
     --project "$PROJECT" \
     --member "serviceAccount:${RUNTIME_SA}" \

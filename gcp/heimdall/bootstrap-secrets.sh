@@ -18,6 +18,9 @@ DB_URL_SECRET="${DB_URL_SECRET:-heimdall-database-url}"
 ENC_SECRET="${ENC_SECRET:-heimdall-encryption-key}"
 JWT_PRIVATE_SECRET="${JWT_PRIVATE_SECRET:-jwt-private-key}"
 JWT_PUBLIC_SECRET="${JWT_PUBLIC_SECRET:-jwt-public-key}"
+# Shared with scorecard and with the Cloudflare Worker (the edge sets this header; both
+# services require it). Owned here since heimdall bootstraps first.
+PROXY_SECRET_NAME="${PROXY_SECRET_NAME:-proxy-secret}"
 
 secret_exists() { gcloud secrets describe "$1" --project "$PROJECT" >/dev/null 2>&1; }
 
@@ -41,5 +44,17 @@ else
   openssl rand -hex 32 | gcloud secrets versions add "$ENC_SECRET" --project "$PROJECT" --data-file=-
 fi
 
-echo "Secrets ready: $DB_URL_SECRET, $JWT_PRIVATE_SECRET, $JWT_PUBLIC_SECRET, $ENC_SECRET"
-echo "Grant access with ./grant-secret-access.sh (and scorecard's, for jwt-public-key)."
+# The proxy secret must stay stable (the Worker holds a copy) — create it only once.
+if secret_exists "$PROXY_SECRET_NAME"; then
+  echo "Keeping existing $PROXY_SECRET_NAME (not rotating)."
+else
+  gcloud secrets create "$PROXY_SECRET_NAME" --project "$PROJECT" --replication-policy=automatic
+  openssl rand -hex 32 | gcloud secrets versions add "$PROXY_SECRET_NAME" --project "$PROJECT" --data-file=-
+fi
+
+echo "Secrets ready: $DB_URL_SECRET, $JWT_PRIVATE_SECRET, $JWT_PUBLIC_SECRET, $ENC_SECRET, $PROXY_SECRET_NAME"
+echo
+echo "Give the Cloudflare Worker the same proxy secret so its header matches:"
+echo "  gcloud secrets versions access latest --secret=$PROXY_SECRET_NAME --project=$PROJECT | \\"
+echo "    (cd ../../cloudflare/api-proxy && npx wrangler secret put PROXY_SECRET)"
+echo "Then grant access with ./grant-secret-access.sh (and scorecard's)."
