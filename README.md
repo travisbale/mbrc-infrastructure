@@ -40,6 +40,7 @@ days a year.
 | `cloudflare/pages/`      | Frontend → Cloudflare Pages (build + deploy) |
 | `gcp/heimdall/`          | heimdall → Cloud Run: keys, secrets, migrations, deploy |
 | `gcp/scorecard/`         | scorecard → Cloud Run: secrets, migrations, deploy |
+| `gcp/ci/`                | GitHub OIDC setup for tag-triggered Cloud Run deploys |
 
 ## Deploy order (from scratch)
 
@@ -49,6 +50,7 @@ days a year.
 4. **Frontend → Pages** — `cloudflare/pages/` (connect the `web` repo; build `npm run build`, output `dist`; add `manitobarydercup.com`).
 5. **API proxy** — set the Cloud Run URLs in `cloudflare/api-proxy/wrangler.toml`, `wrangler deploy`.
 6. **Harden & cap cost** (below).
+7. **CI/CD** — `gcp/ci/` sets up tag-triggered deploys; after the first manual deploy, `git push origin vX.Y.Z` ships a service.
 
 ## Bot traffic & cost controls
 
