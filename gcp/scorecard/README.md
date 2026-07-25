@@ -21,9 +21,9 @@ export GCP_PROJECT=your-project
 export GCP_REGION=us-central1
 export SCORECARD_SRC=../../../scorecard          # a checkout of the scorecard repo
 
-# 1. Create secrets (DB URL + heimdall's public key) and grant Cloud Run access.
+# 1. Create scorecard's DB-URL secret and grant Cloud Run access. (The shared
+#    jwt-public-key secret is created by heimdall's bootstrap — deploy heimdall first.)
 SCORECARD_DATABASE_URL='postgres://…neon.tech/scorecard?sslmode=require' \
-JWT_PUBLIC_KEY_FILE=./jwt-public.pem \
   ./bootstrap-secrets.sh
 ./grant-secret-access.sh
 

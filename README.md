@@ -37,15 +37,16 @@ days a year.
 | Path                     | What |
 | ------------------------ | ---- |
 | `cloudflare/api-proxy/`  | Worker routing `/api/*` → Cloud Run (`wrangler deploy`) |
+| `cloudflare/pages/`      | Frontend → Cloudflare Pages (build + deploy) |
+| `gcp/heimdall/`          | heimdall → Cloud Run: keys, secrets, migrations, deploy |
 | `gcp/scorecard/`         | scorecard → Cloud Run: secrets, migrations, deploy |
-| `gcp/heimdall/`          | heimdall → Cloud Run *(todo)* |
 
 ## Deploy order (from scratch)
 
 1. **Neon** — create a project; note the `scorecard` and `heimdall` connection strings.
-2. **heimdall → Cloud Run** *(todo)* — it mints the JWT keypair; export the **public** key for scorecard.
+2. **heimdall → Cloud Run** — `gcp/heimdall/` (keys → secrets → migrate → deploy). It owns the JWT keypair, so this creates the shared `jwt-public-key` secret scorecard needs.
 3. **scorecard → Cloud Run** — `gcp/scorecard/` (secrets → migrate → deploy).
-4. **Frontend → Pages** — connect the `web` repo; build `npm run build`, output `dist`; add `manitobarydercup.com`.
+4. **Frontend → Pages** — `cloudflare/pages/` (connect the `web` repo; build `npm run build`, output `dist`; add `manitobarydercup.com`).
 5. **API proxy** — set the Cloud Run URLs in `cloudflare/api-proxy/wrangler.toml`, `wrangler deploy`.
 6. **Harden & cap cost** (below).
 
