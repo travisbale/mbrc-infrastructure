@@ -61,7 +61,6 @@ export HEIMDALL_SRC=../../../../travisbale/heimdall
 ./generate-jwt-keys.sh                       # RSA keypair → ./keys (git-ignored)
 ./bootstrap-secrets.sh                        # DB URL, JWT keypair, encryption key, proxy-secret
 ./grant-secret-access.sh
-./migrate.sh
 ./deploy.sh                                   # prints HEIMDALL_URL — save it
 ```
 
@@ -89,7 +88,6 @@ export SCORECARD_SRC=../../../scorecard
 
 ./bootstrap-secrets.sh                         # scorecard DB URL (jwt-public-key already exists)
 ./grant-secret-access.sh
-./migrate.sh
 ./deploy.sh                                    # prints SCORECARD_URL — save it
 ```
 

@@ -31,10 +31,7 @@ export HEIMDALL_SRC=../../../../travisbale/heimdall   # a checkout of the heimda
 HEIMDALL_DATABASE_URL='postgres://…neon.tech/heimdall?sslmode=require' ./bootstrap-secrets.sh
 ./grant-secret-access.sh
 
-# 3. Apply DB migrations.
-./migrate.sh
-
-# 4. Deploy.
+# 3. Deploy. Migrations are applied by the service itself on startup.
 ./deploy.sh
 ```
 
@@ -48,6 +45,11 @@ exists (scorecard reads it).
   heimdall uses a console email client — password-reset "emails" are logged, not sent.
   That matches the frontend's stubbed forgot-password flow. Wire up `mailman` or a webhook
   later to send real mail.
+- **Migrations run at startup.** They're embedded in the binary and applied before the
+  listener opens (`internal/app/setup.go`), so a failed migration means the revision never
+  becomes healthy and Cloud Run keeps routing to the previous one. CI only ever migrates
+  an *empty* database, so a migration that depends on existing data can pass CI and still
+  fail here.
 - **gRPC (9090)** runs internally but isn't exposed by Cloud Run; nothing in this
   deployment consumes it.
 - **Social login** (`GOOGLE_*`, `MICROSOFT_*`) is unset — email/password only for now.

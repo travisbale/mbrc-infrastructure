@@ -38,15 +38,15 @@ days a year.
 | ------------------------ | ---- |
 | `cloudflare/api-proxy/`  | Worker routing `/api/*` → Cloud Run (`wrangler deploy`) |
 | `cloudflare/pages/`      | Frontend → Cloudflare Pages (build + deploy) |
-| `gcp/heimdall/`          | heimdall → Cloud Run: keys, secrets, migrations, deploy |
-| `gcp/scorecard/`         | scorecard → Cloud Run: secrets, migrations, deploy |
+| `gcp/heimdall/`          | heimdall → Cloud Run: keys, secrets, deploy |
+| `gcp/scorecard/`         | scorecard → Cloud Run: secrets, deploy |
 | `gcp/ci/`                | GitHub OIDC setup for tag-triggered Cloud Run deploys |
 
 ## Deploy order (from scratch)
 
 1. **Neon** — create a project; note the `scorecard` and `heimdall` connection strings.
-2. **heimdall → Cloud Run** — `gcp/heimdall/` (keys → secrets → migrate → deploy). It owns the JWT keypair, so this creates the shared `jwt-public-key` secret scorecard needs.
-3. **scorecard → Cloud Run** — `gcp/scorecard/` (secrets → migrate → deploy).
+2. **heimdall → Cloud Run** — `gcp/heimdall/` (keys → secrets → deploy). It owns the JWT keypair, so this creates the shared `jwt-public-key` secret scorecard needs.
+3. **scorecard → Cloud Run** — `gcp/scorecard/` (secrets → deploy).
 4. **Frontend → Pages** — `cloudflare/pages/` (connect the `web` repo; build `npm run build`, output `dist`; add `manitobarydercup.com`).
 5. **API proxy** — set the Cloud Run URLs in `cloudflare/api-proxy/wrangler.toml`, `wrangler deploy`.
 6. **Harden & cap cost** (below).
