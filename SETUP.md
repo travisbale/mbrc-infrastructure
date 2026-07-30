@@ -186,13 +186,17 @@ No build-time API vars needed (the app calls relative `/api/*`).
 
 ## Phase 5 — API proxy Worker
 
+The Worker lives in the **web** repo, at `worker/`, next to the dev Vite proxy it mirrors.
+It ships with the SPA on a version tag; this is the one-time setup.
+
 ```bash
-cd ../../cloudflare/api-proxy
+cd ../../../web/worker
 # 1. Put HEIMDALL_URL and SCORECARD_URL into wrangler.toml [vars].
-# 2. Give the Worker the same proxy secret the services enforce:
+# 2. Give the Worker the same proxy secret the services enforce. Do this once — a
+#    deploy leaves existing secrets alone, and a mismatch 403s all API traffic.
 gcloud secrets versions access latest --secret=proxy-secret --project="$GCP_PROJECT" \
   | npx wrangler secret put PROXY_SECRET
-# 3. Ship it:
+# 3. Ship it (or push a version tag and let release.yml do it):
 npm install && npm run deploy
 ```
 

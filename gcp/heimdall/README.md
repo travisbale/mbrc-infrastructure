@@ -35,7 +35,7 @@ HEIMDALL_DATABASE_URL='postgres://…neon.tech/heimdall?sslmode=require' ./boots
 ./deploy.sh
 ```
 
-`deploy.sh` prints the service URL — copy it into `cloudflare/api-proxy/wrangler.toml` as
+`deploy.sh` prints the service URL — copy it into the web repo's `worker/wrangler.toml` as
 `HEIMDALL_URL`. Deploy heimdall **before** scorecard so the shared `jwt-public-key` secret
 exists (scorecard reads it).
 

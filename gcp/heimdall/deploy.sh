@@ -58,4 +58,4 @@ echo
 echo "Deployed. Service URL:"
 gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" \
   --format='value(status.url)'
-echo "→ put that URL in cloudflare/api-proxy/wrangler.toml as HEIMDALL_URL."
+echo "→ put that URL in the web repo's worker/wrangler.toml as HEIMDALL_URL."

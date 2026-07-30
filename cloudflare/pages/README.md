@@ -14,7 +14,7 @@ and deploys:
 - **Custom domains:** `manitobarydercup.com` and `www.manitobarydercup.com`
 
 The app calls relative `/api/*` paths, so **no build-time API env vars are needed** — the
-Worker in `../api-proxy/` routes those to Cloud Run at the edge.
+Worker in the web repo's `worker/` routes those to Cloud Run at the edge.
 
 ## Manual deploy
 
@@ -32,6 +32,6 @@ PAGES_PROJECT=mbrc-web WEB_SRC=../../../web ./deploy.sh
 
 ## Domain + Worker coexistence
 
-The Pages project owns `manitobarydercup.com`; the `../api-proxy/` Worker is bound to
+The Pages project owns `manitobarydercup.com`; the web repo's `worker/` Worker is bound to
 `manitobarydercup.com/api/*` and runs in front of Pages for those paths only. Set the
 Pages custom domain first, then deploy the Worker.

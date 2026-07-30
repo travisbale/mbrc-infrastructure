@@ -31,7 +31,7 @@ SCORECARD_DATABASE_URL='postgres://…neon.tech/scorecard?sslmode=require' \
 SCORECARD_PUBLIC_TENANT_ID=<your-tenant-uuid> ./deploy.sh
 ```
 
-`deploy.sh` prints the service URL — copy it into `cloudflare/api-proxy/wrangler.toml`
+`deploy.sh` prints the service URL — copy it into the web repo's `worker/wrangler.toml`
 as `SCORECARD_URL`.
 
 ## Notes

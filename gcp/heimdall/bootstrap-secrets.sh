@@ -61,5 +61,5 @@ echo "Secrets ready: $DB_URL_SECRET, $JWT_PRIVATE_SECRET, $JWT_PUBLIC_SECRET, $E
 echo
 echo "Give the Cloudflare Worker the same proxy secret so its header matches:"
 echo "  gcloud secrets versions access latest --secret=$PROXY_SECRET_NAME --project=$PROJECT | \\"
-echo "    (cd ../../cloudflare/api-proxy && npx wrangler secret put PROXY_SECRET)"
+echo "    (cd ../../../web/worker && npx wrangler secret put PROXY_SECRET)"
 echo "Then grant access with ./grant-secret-access.sh (and scorecard's)."
