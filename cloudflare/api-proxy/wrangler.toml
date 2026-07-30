@@ -14,11 +14,12 @@ routes = [
   { pattern = "www.manitobarydercup.com/api/*", zone_name = "manitobarydercup.com" },
 ]
 
-# Non-secret upstream URLs — fill these in after the Cloud Run services are deployed
-# (`gcloud run services describe <svc> --format='value(status.url)'`).
+# Non-secret upstream URLs — from `gcloud run services describe <svc>
+# --format='value(status.url)'`. Safe to commit: both services 403 anything arriving
+# without the X-Proxy-Secret header below, so knowing the URL grants nothing.
 [vars]
-HEIMDALL_URL = "https://REPLACE-heimdall-xxxxx-uc.a.run.app"
-SCORECARD_URL = "https://REPLACE-scorecard-xxxxx-uc.a.run.app"
+HEIMDALL_URL = "https://heimdall-tpd36czisa-uc.a.run.app"
+SCORECARD_URL = "https://scorecard-tpd36czisa-uc.a.run.app"
 
 # PROXY_SECRET is a secret, not a var. It must equal the `proxy-secret` in Secret Manager
 # that both Cloud Run services read (they enforce the X-Proxy-Secret header). Set it with:
