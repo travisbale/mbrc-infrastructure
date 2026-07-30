@@ -1,20 +1,72 @@
 # mbrc-infrastructure
 
-Infrastructure repository for deploying and managing the Manitoba Ryder Cup web application on AWS.
+Deployment for the Manitoba Ryder Cup app. This branch replaces the previous single-EC2
+setup (nginx + certbot + docker-compose, preserved on `master`) with a **serverless,
+scale-to-zero** stack that idles at ~$0/month — appropriate for an app that's busy a few
+days a year.
 
-This setup is optimized for a small, single server environment with an emphasis on automation, portability, and security.
+## Architecture
 
-## Overview
+```
+                    ┌─────────────────────────────┐
+   internet ───────▶│      Cloudflare (edge)      │  WAF · Bot Fight · rate-limit · cache
+                    └──────┬───────────────┬──────┘
+                           │               │
+              everything else         /api/auth/*  /api/scorecard/*
+                           │               │
+                    ┌──────▼──────┐   ┌─────▼─────────────────┐
+                    │ Pages       │   │ Cloud Run (2 services)│  min=0, max=3
+                    │ (Vue SPA)   │   │ heimdall + scorecard  │
+                    └─────────────┘   └─────────┬─────────────┘
+                                                │
+                                          ┌─────▼─────┐
+                                          │   Neon    │  serverless Postgres (autosuspend)
+                                          └───────────┘
+```
 
-This repository manages:
+- **Frontend** — the Vue build on **Cloudflare Pages** (static, free, edge-cached).
+- **APIs** — `scorecard` and `heimdall` on **Cloud Run** (containers, scale to zero).
+- **Same-origin** — the SPA calls relative `/api/*`; a Cloudflare **Worker**
+  (the web repo's `worker/`) routes those to Cloud Run, so there's no CORS and the Cloud
+  Run URLs stay private. It mirrors the dev Vite proxy (prefix strip + refresh-cookie
+  Path rewrite).
+- **Database** — **Neon** serverless Postgres (free tier, sleeps when idle).
 
-- Dockerized application stack (nginx, certbot, postgres database)
-- TLS certificates via Certbot and Route 53 DNS-01
-- Systemd based scheduling for TLS renewal
+## Layout
 
-## Requirements
+The `/api/*` Worker is **not** here — it lives in the web repo at `worker/`, beside the
+dev Vite proxy it has to agree with, and ships with the SPA on a version tag.
 
-- Amazon EC2 Instance
-- An IAM Role with appropriate permissions attached to the EC2 instance
-- Route 53 hosted zone for your domain
-- AWS Secrets Manager configured for JWT key storage
+| Path                     | What |
+| ------------------------ | ---- |
+| `cloudflare/pages/`      | Frontend → Cloudflare Pages (build + deploy) |
+| `gcp/heimdall/`          | heimdall → Cloud Run: keys, secrets, deploy |
+| `gcp/scorecard/`         | scorecard → Cloud Run: secrets, deploy |
+| `gcp/ci/`                | GitHub OIDC setup for tag-triggered Cloud Run deploys |
+
+## Deploy order (from scratch)
+
+1. **Neon** — create a project; note the `scorecard` and `heimdall` connection strings.
+2. **heimdall → Cloud Run** — `gcp/heimdall/` (keys → secrets → deploy). It owns the JWT keypair, so this creates the shared `jwt-public-key` secret scorecard needs.
+3. **scorecard → Cloud Run** — `gcp/scorecard/` (secrets → deploy).
+4. **Frontend → Pages** — `cloudflare/pages/` (connect the `web` repo; build `npm run build`, output `dist`; add `manitobarydercup.com`).
+5. **API proxy** — in the web repo, set the Cloud Run URLs in `worker/wrangler.toml`; it ships with the SPA on a version tag.
+6. **Harden & cap cost** (below).
+7. **CI/CD** — `gcp/ci/` sets up tag-triggered deploys; after the first manual deploy, `git push origin vX.Y.Z` ships a service.
+
+## Bot traffic & cost controls
+
+- **Pages** absorbs all static/bot traffic at the edge for free — never hits an origin.
+- **`--max-instances 3`** on each Cloud Run service bounds cost under any flood (worst
+  case = 429s, not a bill). **`--min-instances 0`** keeps idle free.
+- **Cloudflare**: enable **Bot Fight Mode** and a **rate-limit rule** on `/api/*`.
+- **Shared-secret ingress gate** (implemented): the Worker sends `X-Proxy-Secret` and both
+  services enforce it (knowhere's `RequireProxySecret`), so a direct hit to a `run.app`
+  URL — around Cloudflare — gets a 403 before touching the DB. Create the `proxy-secret`
+  (heimdall bootstrap) and give the Worker the same value.
+- **Budget alert**: `gcloud billing budgets create` at $5/$10 as a safety net.
+```
+gcloud billing budgets create --billing-account=<ACCT> \
+  --display-name="mbrc" --budget-amount=10USD \
+  --threshold-rule=percent=0.5 --threshold-rule=percent=1.0
+```
