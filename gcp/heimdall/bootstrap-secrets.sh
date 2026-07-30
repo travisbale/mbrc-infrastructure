@@ -35,13 +35,18 @@ create_or_update "$DB_URL_SECRET"     printf %s "$DB_URL"
 create_or_update "$JWT_PRIVATE_SECRET" cat "$KEYS_DIR/jwt-private.pem"
 create_or_update "$JWT_PUBLIC_SECRET"  cat "$KEYS_DIR/jwt-public.pem"
 
+# `openssl rand -hex` ends its output with a newline, which would be stored as part of the
+# secret. heimdall hex-decodes ENCRYPTION_KEY and would refuse to start; PROXY_SECRET is
+# compared byte-for-byte against the header the Worker sends. Strip it in both cases.
+rand_hex() { openssl rand -hex 32 | tr -d '\n'; }
+
 # The AES-256 encryption key must be stable — rotating it breaks anything already
 # encrypted (e.g. stored OAuth client secrets) — so create it only once.
 if secret_exists "$ENC_SECRET"; then
   echo "Keeping existing $ENC_SECRET (not rotating)."
 else
   gcloud secrets create "$ENC_SECRET" --project "$PROJECT" --replication-policy=automatic
-  openssl rand -hex 32 | gcloud secrets versions add "$ENC_SECRET" --project "$PROJECT" --data-file=-
+  rand_hex | gcloud secrets versions add "$ENC_SECRET" --project "$PROJECT" --data-file=-
 fi
 
 # The proxy secret must stay stable (the Worker holds a copy) — create it only once.
@@ -49,7 +54,7 @@ if secret_exists "$PROXY_SECRET_NAME"; then
   echo "Keeping existing $PROXY_SECRET_NAME (not rotating)."
 else
   gcloud secrets create "$PROXY_SECRET_NAME" --project "$PROJECT" --replication-policy=automatic
-  openssl rand -hex 32 | gcloud secrets versions add "$PROXY_SECRET_NAME" --project "$PROJECT" --data-file=-
+  rand_hex | gcloud secrets versions add "$PROXY_SECRET_NAME" --project "$PROJECT" --data-file=-
 fi
 
 echo "Secrets ready: $DB_URL_SECRET, $JWT_PRIVATE_SECRET, $JWT_PUBLIC_SECRET, $ENC_SECRET, $PROXY_SECRET_NAME"

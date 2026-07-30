@@ -5,7 +5,10 @@
 # HTTP port, which is all the SPA needs (scorecard verifies JWTs locally with the public
 # key, so it doesn't call heimdall's gRPC).
 #
-#   GCP_PROJECT=my-proj ./deploy.sh
+# Deploys a prebuilt image from Artifact Registry, the same way release.yml does. Set
+# IMAGE to pick a tag; without it, Cloud Build builds one from a local checkout instead.
+#
+#   GCP_PROJECT=my-proj IMAGE=…/mbrc/heimdall:bootstrap ./deploy.sh
 #
 set -euo pipefail
 
@@ -13,6 +16,12 @@ PROJECT="${GCP_PROJECT:?set GCP_PROJECT}"
 REGION="${GCP_REGION:-us-central1}"
 SERVICE="${SERVICE:-heimdall}"
 SOURCE_DIR="${HEIMDALL_SRC:-../../../../travisbale/heimdall}"
+
+if [[ -n "${IMAGE:-}" ]]; then
+  BUILD_FROM=(--image "$IMAGE")
+else
+  BUILD_FROM=(--source "$SOURCE_DIR")
+fi
 
 # The SPA origin(s). PUBLIC_URL is the *frontend* base — heimdall builds the password-reset
 # and email-verification links users click from it.
@@ -25,11 +34,15 @@ JWT_PRIVATE_SECRET="${JWT_PRIVATE_SECRET:-jwt-private-key}"
 JWT_PUBLIC_SECRET="${JWT_PUBLIC_SECRET:-jwt-public-key}"
 PROXY_SECRET_NAME="${PROXY_SECRET_NAME:-proxy-secret}"
 
+# The two JWT keys mount in separate directories on purpose: Cloud Run derives a volume
+# per secret and refuses two of them at the same mount point. Only the *_KEY_PATH env vars
+# below care where they land, so they just have to agree with the --set-secrets paths.
+#
 # `^@^` makes @ the delimiter between vars, so CORS_ALLOWED_ORIGINS can contain commas.
 gcloud run deploy "$SERVICE" \
   --project "$PROJECT" \
   --region "$REGION" \
-  --source "$SOURCE_DIR" \
+  "${BUILD_FROM[@]}" \
   --port 8080 \
   --cpu 1 \
   --memory 512Mi \
@@ -38,8 +51,8 @@ gcloud run deploy "$SERVICE" \
   --min-instances 0 \
   --max-instances 3 \
   --allow-unauthenticated \
-  --set-env-vars "^@^ENVIRONMENT=production@LOG_FORMAT=json@HTTP_ADDRESS=:8080@PUBLIC_URL=${PUBLIC_URL}@TRUSTED_PROXY_MODE=true@CORS_ALLOWED_ORIGINS=${CORS_ORIGINS}@JWT_PRIVATE_KEY_PATH=/secrets/jwt/private.pem@JWT_PUBLIC_KEY_PATH=/secrets/jwt/public.pem" \
-  --set-secrets "DATABASE_URL=${DB_URL_SECRET}:latest,ENCRYPTION_KEY=${ENC_SECRET}:latest,PROXY_SECRET=${PROXY_SECRET_NAME}:latest,/secrets/jwt/private.pem=${JWT_PRIVATE_SECRET}:latest,/secrets/jwt/public.pem=${JWT_PUBLIC_SECRET}:latest"
+  --set-env-vars "^@^ENVIRONMENT=production@LOG_FORMAT=json@HTTP_ADDRESS=:8080@PUBLIC_URL=${PUBLIC_URL}@TRUSTED_PROXY_MODE=true@CORS_ALLOWED_ORIGINS=${CORS_ORIGINS}@JWT_PRIVATE_KEY_PATH=/secrets/jwt-private/private.pem@JWT_PUBLIC_KEY_PATH=/secrets/jwt-public/public.pem" \
+  --set-secrets "DATABASE_URL=${DB_URL_SECRET}:latest,ENCRYPTION_KEY=${ENC_SECRET}:latest,PROXY_SECRET=${PROXY_SECRET_NAME}:latest,/secrets/jwt-private/private.pem=${JWT_PRIVATE_SECRET}:latest,/secrets/jwt-public/public.pem=${JWT_PUBLIC_SECRET}:latest"
 
 echo
 echo "Deployed. Service URL:"

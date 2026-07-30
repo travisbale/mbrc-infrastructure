@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 #
-# Deploy the scorecard API to Cloud Run. Builds the image from the scorecard repo's
-# Dockerfile via Cloud Build (--source), then deploys with scale-to-zero and a capped
-# max-instances so bot traffic can never run up an unbounded bill.
+# Deploy the scorecard API to Cloud Run with scale-to-zero and a capped max-instances so
+# bot traffic can never run up an unbounded bill.
+#
+# Deploys a prebuilt image from Artifact Registry, the same way release.yml does. Set
+# IMAGE to pick a tag; without it, Cloud Build builds one from a local checkout instead.
 #
 #   GCP_PROJECT=my-proj \
 #   SCORECARD_PUBLIC_TENANT_ID=11111111-1111-1111-1111-111111111111 \
+#   IMAGE=…/mbrc/scorecard:bootstrap \
 #     ./deploy.sh
 #
 set -euo pipefail
@@ -26,10 +29,16 @@ DB_URL_SECRET="${DB_URL_SECRET:-scorecard-database-url}"
 JWT_PUBKEY_SECRET="${JWT_PUBKEY_SECRET:-jwt-public-key}"
 PROXY_SECRET_NAME="${PROXY_SECRET_NAME:-proxy-secret}"
 
+if [[ -n "${IMAGE:-}" ]]; then
+  BUILD_FROM=(--image "$IMAGE")
+else
+  BUILD_FROM=(--source "$SOURCE_DIR")
+fi
+
 gcloud run deploy "$SERVICE" \
   --project "$PROJECT" \
   --region "$REGION" \
-  --source "$SOURCE_DIR" \
+  "${BUILD_FROM[@]}" \
   --port 5000 \
   --cpu 1 \
   --memory 512Mi \
