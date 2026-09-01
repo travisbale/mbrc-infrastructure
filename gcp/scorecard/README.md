@@ -27,7 +27,10 @@ SCORECARD_DATABASE_URL='postgres://…neon.tech/scorecard?sslmode=require' \
   ./bootstrap-secrets.sh
 ./grant-secret-access.sh
 
-# 2. Deploy the service. Migrations are applied by the service itself on startup.
+# 2. Apply DB migrations (one-off Cloud Run Job).
+./migrate.sh
+
+# 3. Deploy the service.
 SCORECARD_PUBLIC_TENANT_ID=<your-tenant-uuid> ./deploy.sh
 ```
 
@@ -42,8 +45,10 @@ as `SCORECARD_URL`.
   key. Export it from heimdall (or Secret Manager) into the PEM file referenced above.
 - **Cost cap:** `--min-instances 0` (idle = free) and `--max-instances 3` (bounded blast
   radius). Pair with a project budget alert — see the top-level README.
-- **Migrations run at startup.** They're embedded in the binary and applied before the
-  HTTP listener opens (`internal/app/server.go`), so a failed migration means the revision
-  never becomes healthy and Cloud Run keeps routing to the previous one. CI only ever
+- **Migrations run before the service does**, as a one-off job on the same image. A
+  failure stops there and leaves the running revision alone, rather than taking out the
+  new revision and every later boot of the old one. The schema therefore reaches
+  production ahead of the code that reads it, so a change has to be compatible with the
+  release before it: add and backfill in one release, remove in a later one. CI only ever
   migrates an *empty* database, so a migration that depends on existing data (a new
   `NOT NULL`, a new unique constraint) can pass CI and still fail here.

@@ -75,7 +75,7 @@ GRANT CONNECT ON DATABASE scorecard TO scorecard;
 GRANT USAGE, CREATE ON SCHEMA public TO scorecard;
 ```
 
-Then point the connection string at that role, so the startup migration creates and owns
+Then point the connection string at that role, so the migration job creates and owns
 every table as it. Verify with `SELECT bool_or(rolbypassrls) FROM pg_roles WHERE
 pg_has_role(current_user, oid, 'USAGE')` — it must be false.
 
